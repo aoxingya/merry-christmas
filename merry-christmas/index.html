@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<title>Merry Christmas, 李慧</title>
+
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: url("bg.jpg") no-repeat center center;
+  background-size: cover;
+  font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+/* 半透明遮罩，保证文字清晰 */
+.mask {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 1;
+}
+
+/* 文字区域 */
+.text {
+  position: absolute;
+  top: 14%;
+  width: 100%;
+  padding: 0 24px;
+  text-align: center;
+  color: #fff;
+  z-index: 3;
+  opacity: 0;
+  transition: opacity 1.5s ease;
+}
+
+.text.show {
+  opacity: 1;
+}
+
+.text h1 {
+  font-size: 28px;
+  margin-bottom: 22px;
+  color: #ffdf8a;
+}
+
+.text p {
+  font-size: 15px;
+  line-height: 2;
+}
+
+/* 底部提示 */
+.tip {
+  position: absolute;
+  bottom: 28px;
+  width: 100%;
+  text-align: center;
+  font-size: 13px;
+  color: #fff;
+  opacity: 0.8;
+  z-index: 3;
+}
+
+/* 右下角署名 */
+.signature {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.6);
+  z-index: 3;
+  pointer-events: none;
+}
+
+/* 烟花画布 */
+canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+}
+</style>
+</head>
+
+<body>
+
+<div class="mask"></div>
+
+<div class="text" id="textBox">
+  <h1 id="title"></h1>
+  <p id="content"></p>
+</div>
+
+<div class="tip" id="tip">✨ 轻点屏幕</div>
+
+<canvas id="canvas"></canvas>
+
+<div class="signature">— 一个在想你的人</div>
+
+<script>
+/* ================= 烟花效果 ================= */
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+function resize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener("resize", resize);
+
+const fireworks = [];
+
+class Firework {
+  constructor(x, y) {
+    this.particles = [];
+    for (let i = 0; i < 40; i++) {
+      this.particles.push({
+        x,
+        y,
+        angle: Math.random() * Math.PI * 2,
+        speed: Math.random() * 4 + 2,
+        alpha: 1
+      });
+    }
+  }
+
+  update() {
+    this.particles.forEach(p => {
+      p.x += Math.cos(p.angle) * p.speed;
+      p.y += Math.sin(p.angle) * p.speed;
+      p.alpha -= 0.02;
+    });
+  }
+
+  draw() {
+    this.particles.forEach(p => {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255, ${200 + Math.random()*55}, 150, ${p.alpha})`;
+      ctx.fill();
+    });
+  }
+}
+
+function animate() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  fireworks.forEach((f, i) => {
+    f.update();
+    f.draw();
+    if (f.particles[0].alpha <= 0) fireworks.splice(i, 1);
+  });
+  requestAnimationFrame(animate);
+}
+animate();
+
+/* ================= 打字机文字 ================= */
+const titleText = "🎄 Merry Christmas, 李慧";
+const lines = [
+  "李慧，",
+  "当雪落下的时候，",
+  "我突然很想把这一刻分给你。",
+  "",
+  "这一年或许不算轻松，",
+  "但你依然温柔、认真、明亮，",
+  "像冬夜里一盏不张扬的灯。",
+  "",
+  "如果世界有一点冷，",
+  "希望你被爱包围。",
+  "如果烟花升起，",
+  "希望你刚好抬头。"
+];
+
+let started = false;
+let lineIndex = 0;
+let charIndex = 0;
+
+const textBox = document.getElementById("textBox");
+const title = document.getElementById("title");
+const content = document.getElementById("content");
+const tip = document.getElementById("tip");
+
+function typeTitle() {
+  let i = 0;
+  const timer = setInterval(() => {
+    title.innerText += titleText[i];
+    i++;
+    if (i >= titleText.length) {
+      clearInterval(timer);
+      setTimeout(typeLine, 600);
+    }
+  }, 120);
+}
+
+function typeLine() {
+  if (lineIndex >= lines.length) return;
+
+  if (charIndex < lines[lineIndex].length) {
+    content.innerHTML += lines[lineIndex][charIndex];
+    charIndex++;
+    setTimeout(typeLine, 120);
+  } else {
+    content.innerHTML += "<br/>";
+    lineIndex++;
+    charIndex = 0;
+    setTimeout(typeLine, 500);
+  }
+}
+
+/* ================= 点击逻辑（三阶段） ================= */
+canvas.addEventListener("click", e => {
+  if (!started) {
+    started = true;
+    textBox.classList.add("show");
+    tip.innerText = "✨ 再点一下，为李慧放烟花";
+    typeTitle();
+  } else {
+    fireworks.push(new Firework(e.clientX, e.clientY));
+  }
+});
+</script>
+
+</body>
+</html>
